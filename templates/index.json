@@ -167,7 +167,7 @@
       "type": "img-txt-bg",
       "name": "Img Txt Bg",
       "settings": {
-        "background_color": "#130FE4",
+        "background_color": "#E40F0F",
         "image": "shopify://shop_images/Main_b13ad453-477c-4ed1-9b43-81f3345adfd6.jpg",
         "text": "<p>Enter your text herewert</p>",
         "text_color": "#000000"
