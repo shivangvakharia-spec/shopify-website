@@ -31,7 +31,7 @@
 			{% endif %}
 		</div>
 	</div>
-	
+	{%  comment  %}  
 	{% form 'product', product %}
 		<div class="product-details__variants">
 			{% for option in product.options_with_values %}
@@ -48,6 +48,7 @@
 			{% endfor %}
 		</div>
 	{% endform %}
+	{% endcomment %}
 	<button>Add to cart</button>
 
 </div>

@@ -1,0 +1,63 @@
+<link rel="stylesheet" href="{{ 'img-txt-bg-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
+
+<div class="img-txt-bg"
+	style="background-color= {{ section.settings.background_color }};">
+	
+	<div class="img-txt-bg__image">
+
+		{% if section.settings.image != blank %}
+
+			{{
+				section.settings.image
+				| image_url: width: 800
+				| image_tag
+			}}
+
+		{% endif %}
+	</div>
+	
+	<div class="img-txt-bg__text">
+		{{ section.settings.text }}
+		style="color: {{ section.settings.text_color }};"
+	</div>
+</div>
+
+
+<script src="{{ 'img-txt-bg-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+	"name": "img-txt-bg",
+	"class": "img-txt-bg-parent",
+	"settings": [
+		{
+			"type": "color",
+			"id": "background_color",
+			"label": "Background Color",
+			"default": "#ffffff"
+		},
+		{
+			"type": "image_picker",
+			"id": "image",
+			"label": "Image"
+		},
+		{
+			"type": "richtext",
+			"id": "text",
+			"label": "Text"
+			"default": "<p>Enter your text here</p>"
+		},
+		{
+			"type": "color",
+			"id": "text_color",
+			"label": "Text Color",
+			"default": "#000000"
+		}
+	],
+	"presets": [
+		{
+			"name": "Img Txt Bg"
+		}
+	]
+}
+{% endschema %}
