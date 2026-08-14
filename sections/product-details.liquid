@@ -31,6 +31,23 @@
 			{% endif %}
 		</div>
 	</div>
+	
+	{% form 'product', product %}
+		<div class="product-details__variants">
+			{% for option in product.options_with_values %}
+				<label for="option-{{ option.position }}">
+					{{ option.name }}
+				</label>
+				<select id="option-{{ option.position }}" name="options[{{ option.name }}]">
+					{% for value in option.values %}
+						<option value="{{ value | escape }}">
+							{{ value }}
+						</option>
+					{% endfor %}
+				</select>
+			{% endfor %}
+		</div>
+	{% endform %}
 	<button>Add to cart</button>
 
 </div>
@@ -50,3 +67,60 @@
 	]
 }
 {% endschema %}
+
+<style>
+  .product-details {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+  }
+
+  .product-details__image img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .product-details__title {
+    font-size: 32px;
+    margin-bottom: 20px;
+  }
+
+  .product-details__price {
+    margin-bottom: 30px;
+  }
+
+  .product-details__current-price {
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .product-details__compare-price {
+    margin-left: 10px;
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .product-details button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .product-details button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .product-details {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
