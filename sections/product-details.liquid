@@ -1,0 +1,52 @@
+<link rel="stylesheet" href="{{ 'product-details-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
+
+<div class="product-details"> 
+	{% if product.featured_image %}
+
+	<div class="product-details__image">
+		<img 
+			src="{{ product.featured_image | image_url: width: 800 }}"
+			alt="{{ product.featured_image.alt | escape }}" 
+			width="{{ product.featured_image.width }}"
+			height="{{ product.featured_image.height }}" 
+		>
+	</div>
+{% endif %}
+
+	<div class="product-details_info">
+
+		<h1 class="product-details__title">
+			{{ product.title }}
+		</h1>
+
+		<div class="product-details__price">
+			<span class="product-details__price--regular">
+				{{ product.price | money }}
+			</span>
+
+			{% if product.compare_at_price > product.price %}
+				<span class="product-details__price--compare">
+					{{ product.compare_at_price | money }}
+				</span>
+			{% endif %}
+		</div>
+	</div>
+	<button>Add to cart</button>
+
+</div>
+
+
+<script src="{{ 'product-details-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+	"name": "product-details",
+	"class": "product-details-parent",
+	"settings": [],
+	"presets": [
+		{
+			"name": "Product Details"
+		}
+	]
+}
+{% endschema %}
