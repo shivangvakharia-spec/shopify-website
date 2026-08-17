@@ -103,11 +103,24 @@
       "type": "product-details",
       "name": "Product Details",
       "settings": {}
+    },
+    "img-txt-bg":{
+        "type": "img-txt-bg",
+        "name": "img-txt-bg",
+        "settings":{}
+    },
+    "pdp":{
+        "type": "pdp",
+        "name": "pdp",
+        "settings":{}
     }
   },
+  
   "order": [
     "main",
     "related-products",
-    "product_details_8pmmK8"
+    "product_details_8pmmK8",
+    "img-txt-bg",
+    "pdp"
   ]
 }

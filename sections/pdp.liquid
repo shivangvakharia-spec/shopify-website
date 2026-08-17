@@ -1,0 +1,116 @@
+<link rel="stylesheet" href="{{ 'pdp-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
+
+<div class="pdp"> 
+
+	{% if product.featured_image %}
+	<div class="pdp_product_image">
+
+			{{
+				product.featured_image
+				| image_url: width: 800
+				| image_tag
+			}}
+
+	</div>
+	{% endif %}
+
+	<div class="pdp_product_details">
+
+		{% for block in section.block %}
+
+			{% case block.type %}
+
+				{% when block.type %}
+					
+					{% when 'title' %}
+
+						<h1 class="pdp_product_title"
+							{{ block.shopify_attributes }}
+						>
+							{{ product.title }}
+						</h1>
+					
+					{% when 'price' %}
+
+						<div class="pdp_product_price"
+							{{ block.shopify_attributes }}
+						>
+							<span class="pdp_product_price--regular">
+								{{ product.price | money }}
+							</span>
+
+							{% if product.compare_at_price > product.price %}
+								<span class="pdp_product_price--compare">
+									{{ product.compare_at_price | money }}
+								</span>
+							{% endif %}
+						</div>
+
+					{% when 'description' %}
+
+						<div class="pdp_product_description"
+							{{ block.shopify_attributes }}
+						>
+							{{ product.description }}
+						</div>
+
+			{% endcase %}
+
+		{% endfor %}
+
+		{% form 'product', product %}
+
+			<input 
+				type="hidden"
+				name="id"
+				value="{{ product.variants.first.id }}"
+			>
+
+		<button type="submit" class="pdp_add_to_cart">
+			Add to cart
+		</button>
+
+		{% endform %}
+	</div>
+</div>
+
+
+<script src="{{ 'pdp-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+	"name": "pdp",
+	"class": "pdp-parent",
+	"blocks": [
+		{
+			"type": "title",
+			"name": "Product Title"
+		},
+		{
+			"type": "price",
+			"name": "Product Price"
+		},
+		{
+			"type": "description",
+			"name": "Product Description"
+		}
+	],
+	"settings": [],
+	"presets": [
+		{
+			"name": "Pdp",
+			"blocks": [
+				{
+					"type": "title"
+				},
+				{
+					"type": "price"
+				},
+				{
+					"type": "description"
+				}
+			]
+		}
+	]
+}
+{% endschema %}
