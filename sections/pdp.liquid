@@ -23,13 +23,30 @@
 
         {% when 'title' %}
 
-          <h1
-            class="pdp_product_title"
-            {{ block.shopify_attributes }}
-          >
-            {{ product.title }}
-          </h1>
+		{% if block.settings.heading_size == 'h1' %}
+			<h1
+			class="pdp_product_title"
+			{{ block.shopify_attributes }}
+			>
+			{{ product.title }}
+			</h1>
 
+		{% elsif block.settings.heading_size == 'h2' %}
+			<h2
+			class="pdp_product_title"
+			{{ block.shopify_attributes }}
+			>
+			{{ product.title }}
+			</h2>
+
+		{% elsif block.settings.heading_size == 'h3' %}
+			<h3
+			class="pdp_product_title"
+			{{ block.shopify_attributes }}
+			>
+			{{ product.title }}
+			</h3>
+		{% endif %}
 
         {% when 'price' %}
 
@@ -50,15 +67,16 @@
 
           </div>
 
+		{% when 'description' %}
 
-        {% when 'description' %}
-
-          <div
-            class="pdp_product_description"
-            {{ block.shopify_attributes }}
-          >
-            {{ product.description }}
-          </div>
+		{% if block.settings.show_description %}
+			<div
+			class="pdp_product_description"
+			{{ block.shopify_attributes }}
+			>
+			{{ product.description }}
+			</div>
+		{% endif %}
 
       {% endcase %}
 
@@ -97,18 +115,50 @@
   "blocks": [
     {
       "type": "title",
-      "name": "Product Title"
+      "name": "Product Title",
+	  "settings": [
+		{
+		"type": "select",
+		"id": "heading_size",
+		"label": "Heading size",
+		"options": [
+			{
+			"value": "h1",
+			"label": "Large"
+			},
+			{
+			"value": "h2",
+			"label": "Medium"
+			},
+			{
+			"value": "h3",
+			"label": "Small"
+			}
+		],
+		"default": "h1"
+		}
+	]
     },
     {
       "type": "price",
-      "name": "Product Price"
+      "name": "Product Price",
+	  "settings": [
+		{
+			"type": "checkbox",
+			"id": "show_description",
+			"label": "Show description",
+			"default": true
+		}
+	]
     },
     {
       "type": "description",
       "name": "Product Description"
     }
   ],
-  "settings": [],
+  "settings": [
+	
+  ],
   "presets": [
     {
       "name": "PDP",
