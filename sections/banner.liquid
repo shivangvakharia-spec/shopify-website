@@ -1,0 +1,21 @@
+<link rel="stylesheet" href="{{ 'banner-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
+
+<div class="banner"> 
+
+</div>
+
+
+<script src="{{ 'banner-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+	"name": "banner",
+	"class": "banner-parent",
+	"settings": [],
+	"presets": [
+		{
+			"name": "Banner"
+		}
+	]
+}
+{% endschema %}
