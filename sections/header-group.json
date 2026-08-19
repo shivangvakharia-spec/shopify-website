@@ -55,6 +55,7 @@
     },
     "header": {
       "type": "header",
+      "disabled": true,
       "custom_css": [
         ".header__heading-link .h2 {font-size: 16px;}"
       ],
