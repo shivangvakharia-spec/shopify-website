@@ -104,6 +104,11 @@
       "name": "Product Details",
       "settings": {}
     },
+    "new-product-details": {
+      "type": "new-product-details",
+      "name": "New Product Details",
+      "settings": {}
+    },
     "img-txt-bg":{
         "type": "img-txt-bg",
         "name": "img-txt-bg",
@@ -138,6 +143,7 @@
   "order": [
     "main",
     "related-products",
+    "new-product-details",
     "product_details_8pmmK8",
     "img-txt-bg",
     "pdp"

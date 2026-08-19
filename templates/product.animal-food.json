@@ -1,0 +1,11 @@
+{
+  "sections": {
+    "main": {
+      "type": "animal-food-product",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

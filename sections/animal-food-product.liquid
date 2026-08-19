@@ -1,0 +1,29 @@
+<link
+  rel="stylesheet"
+  href="{{ 'animal-food-product-stylesheet.css' | asset_url }}"
+  media="print"
+  onload="this.media='all'">
+
+<div class="animal-food-product">
+
+  <h1>{{ product.title }}</h1>
+  <h1>{{ product.description }}</h1>
+  <h1>{{ product.price | money }}</h1>
+
+</div>
+
+
+<script src="{{ 'animal-food-product-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+  {
+    "name": "animal-food-product",
+    "class": "animal-food-product-parent",
+    "settings": [],
+    "presets": [
+      {
+        "name": "Animal Food Product"
+      }
+    ]
+  }
+{% endschema %}

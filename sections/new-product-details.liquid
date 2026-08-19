@@ -3,42 +3,571 @@
   href="{{ 'new-product-details-stylesheet.css' | asset_url }}"
   media="print"
   onload="this.media='all'">
+<noscript>
+  {{ 'new-product-details-stylesheet.css' | asset_url | stylesheet_tag }}
+</noscript>
 
-<div class="new-product-details">
+{%- style -%}
+  .section-{{ section.id }} {
+    --npd-max-width: {{ section.settings.max_width }}px;
+    --npd-padding-top: {{ section.settings.padding_top }}px;
+    --npd-padding-bottom: {{ section.settings.padding_bottom }}px;
+    --npd-arrow-bg: {{ section.settings.arrow_bg_color }};
+    --npd-arrow-color: {{ section.settings.arrow_icon_color }};
+    --npd-active-border: {{ section.settings.active_thumb_border_color }};
+    --npd-main-radius: {{ section.settings.main_border_radius }}px;
+    --npd-thumb-radius: {{ section.settings.thumb_border_radius }}px;
+    --npd-aspect-ratio: {{ section.settings.image_aspect_ratio }};
+  }
+{%- endstyle -%}
 
-  {% if product.featured_image %}
+<div class="new-product-details section-{{ section.id }}" data-section-id="{{ section.id }}">
+  <div class="new-product-details__container">
+    
+    <!-- Product Gallery Carousel Column -->
+    <div class="new-product-details__gallery">
+      <div 
+        class="product-image-carousel" 
+        id="ProductCarousel-{{ section.id }}"
+        data-autoplay="{{ section.settings.enable_autoplay }}"
+        data-autoplay-speed="{{ section.settings.autoplay_speed }}"
+      >
+        <!-- Main Image Slider -->
+        <div class="product-carousel__main-wrapper">
+          <div 
+            class="product-carousel__main" 
+            id="MainSlider-{{ section.id }}" 
+            tabindex="0" 
+            role="region" 
+            aria-label="Product Image Gallery"
+          >
+            <div class="product-carousel__track" id="CarouselTrack-{{ section.id }}">
+              {% if product.media.size > 0 %}
+                {% for media in product.media %}
+                  {% assign media_alt = media.alt | default: product.title | escape %}
+                  <div 
+                    class="product-carousel__slide{% if forloop.first %} is-active{% endif %}" 
+                    data-index="{{ forloop.index0 }}"
+                    data-media-id="{{ media.id }}"
+                  >
+                    {% case media.media_type %}
+                      {% when 'image' %}
+                        {{
+                          media
+                          | image_url: width: 1400
+                          | image_tag:
+                            loading: 'lazy',
+                            sizes: '(min-width: 1200px) 600px, (min-width: 750px) 50vw, 100vw',
+                            widths: '400, 600, 800, 1000, 1200, 1400',
+                            alt: media_alt,
+                            class: 'product-carousel__image'
+                        }}
+                      {% when 'video', 'external_video' %}
+                        <div class="product-carousel__video-container">
+                          {{ media | video_tag: controls: true, image_size: '1200x', class: 'product-carousel__video' }}
+                        </div>
+                      {% when 'model' %}
+                        <div class="product-carousel__model-container">
+                          {{ media | model_viewer_tag: image_size: '1200x', class: 'product-carousel__model' }}
+                        </div>
+                      {% else %}
+                        {{
+                          media
+                          | image_url: width: 1400
+                          | image_tag:
+                            loading: 'lazy',
+                            alt: media_alt,
+                            class: 'product-carousel__image'
+                        }}
+                    {% endcase %}
+                  </div>
+                {% endfor %}
+              {% elsif product.featured_image != blank %}
+                {% assign feat_alt = product.featured_image.alt | default: product.title | escape %}
+                <div class="product-carousel__slide is-active" data-index="0">
+                  {{
+                    product.featured_image
+                    | image_url: width: 1400
+                    | image_tag:
+                      loading: 'lazy',
+                      alt: feat_alt,
+                      class: 'product-carousel__image'
+                  }}
+                </div>
+              {% elsif section.settings.image != blank %}
+                {% assign custom_alt = section.settings.text | default: 'Product Image' | escape %}
+                <div class="product-carousel__slide is-active" data-index="0">
+                  {{
+                    section.settings.image
+                    | image_url: width: 1400
+                    | image_tag:
+                      loading: 'lazy',
+                      alt: custom_alt,
+                      class: 'product-carousel__image'
+                  }}
+                </div>
+              {% else %}
+                {% for i in (1..5) %}
+                  <div class="product-carousel__slide{% if forloop.first %} is-active{% endif %}" data-index="{{ forloop.index0 }}">
+                    {{ 'product-' | append: i | placeholder_svg_tag: 'placeholder-svg product-carousel__placeholder' }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
 
-    <div class="product-image">
-      {% if section.settings.image != blank %}
+            <!-- Left Navigation Button -->
+            <button 
+              type="button" 
+              class="product-carousel__btn product-carousel__btn--prev" 
+              aria-label="Previous image"
+              data-action="prev"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
 
-        {{
-          section.settings.image | image_url: width: 800 | image_tag
-        }}
+            <!-- Right Navigation Button -->
+            <button 
+              type="button" 
+              class="product-carousel__btn product-carousel__btn--next" 
+              aria-label="Next image"
+              data-action="next"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
 
-      {% endif %}
+        <!-- Thumbnails Gallery Strip -->
+        <div class="product-carousel__thumbs-wrapper">
+          <div 
+            class="product-carousel__thumbs" 
+            id="Thumbnails-{{ section.id }}" 
+            role="tablist" 
+            aria-label="Product thumbnails"
+          >
+            {% if product.media.size > 1 %}
+              {% for media in product.media %}
+                {% assign thumb_alt = media.alt | default: product.title | escape %}
+                <button
+                  type="button"
+                  class="product-carousel__thumb{% if forloop.first %} is-active{% endif %}"
+                  data-index="{{ forloop.index0 }}"
+                  data-media-id="{{ media.id }}"
+                  role="tab"
+                  aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                  aria-label="View media {{ forloop.index }} of {{ forloop.length }}"
+                >
+                  {{
+                    media.preview_image | default: media
+                    | image_url: width: 240, height: 240, crop: 'center'
+                    | image_tag:
+                      loading: 'lazy',
+                      alt: thumb_alt,
+                      class: 'product-carousel__thumb-img'
+                  }}
+                </button>
+              {% endfor %}
+            {% elsif product.media.size == 0 and section.settings.image == blank %}
+              {% for i in (1..5) %}
+                <button
+                  type="button"
+                  class="product-carousel__thumb{% if forloop.first %} is-active{% endif %}"
+                  data-index="{{ forloop.index0 }}"
+                  role="tab"
+                  aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                  aria-label="Thumbnail {{ i }}"
+                >
+                  {{ 'product-' | append: i | placeholder_svg_tag: 'placeholder-svg product-carousel__thumb-placeholder' }}
+                </button>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
 
+      </div>
     </div>
-  {% endif %}
 
-  <div class="product-details">
-    {{ section.settings.text }}
+    <!-- Product Details Info Column -->
+    <div class="new-product-details__info">
+      {% for block in section.blocks %}
+        {% case block.type %}
+          {% when 'title' %}
+            <div class="new-product-details__title-box" {{ block.shopify_attributes }}>
+              <h1 class="new-product-details__title {{ block.settings.heading_size }}">
+                {{ product.title | default: section.settings.text | default: 'Wellie Bellie Bites for Dogs' }}
+              </h1>
+            </div>
+
+          {% when 'price' %}
+            <div class="new-product-details__price-box" {{ block.shopify_attributes }}>
+              <div class="new-product-details__price">
+                <span class="new-product-details__price-regular">
+                  {{ product.price | default: 2999 | money }}
+                </span>
+                {% if product.compare_at_price > product.price %}
+                  <span class="new-product-details__price-compare">
+                    {{ product.compare_at_price | money }}
+                  </span>
+                  {% assign discount_pct = product.compare_at_price | minus: product.price | times: 100.0 | divided_by: product.compare_at_price | round %}
+                  <span class="new-product-details__badge-save">
+                    Save {{ discount_pct }}%
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+
+          {% when 'variant_picker' %}
+            <div class="new-product-details__variants-box" {{ block.shopify_attributes }}>
+              {% unless product.has_only_default_variant %}
+                {% for option in product.options_with_values %}
+                  <div class="new-product-details__option-group" data-option-index="{{ forloop.index0 }}">
+                    <label class="new-product-details__option-label">
+                      {{ option.name }}: <span class="new-product-details__option-selected-value">{{ option.selected_value }}</span>
+                    </label>
+                    <div class="new-product-details__option-values">
+                      {% for value in option.values %}
+                        <button
+                          type="button"
+                          class="new-product-details__pill-btn{% if option.selected_value == value %} is-selected{% endif %}"
+                          data-option-position="{{ option.position }}"
+                          data-value="{{ value | escape }}"
+                        >
+                          {{ value }}
+                        </button>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endfor %}
+              {% endunless %}
+            </div>
+
+          {% when 'buy_buttons' %}
+            <div class="new-product-details__buy-box" {{ block.shopify_attributes }}>
+              {% form 'product', product, id: 'NewProductDetailsForm', class: 'new-product-details__form' %}
+                <input 
+                  type="hidden" 
+                  name="id" 
+                  value="{{ product.selected_or_first_available_variant.id | default: 1 }}"
+                >
+
+                <div class="new-product-details__actions">
+                  {% if block.settings.show_quantity_selector %}
+                    <div class="new-product-details__quantity">
+                      <button type="button" class="new-product-details__qty-btn" data-action="decrease" aria-label="Decrease quantity">−</button>
+                      <input 
+                        type="number" 
+                        name="quantity" 
+                        id="Quantity-{{ section.id }}" 
+                        value="1" 
+                        min="1" 
+                        class="new-product-details__qty-input"
+                        aria-label="Quantity"
+                      >
+                      <button type="button" class="new-product-details__qty-btn" data-action="increase" aria-label="Increase quantity">+</button>
+                    </div>
+                  {% endif %}
+
+                  <button
+                    type="submit"
+                    name="add"
+                    class="new-product-details__add-to-cart-btn"
+                    {% if product != blank and product.available == false %}disabled{% endif %}
+                  >
+                    {% if product == blank or product.available %}
+                      {{ 'products.product.add_to_cart' | t | default: 'Add to cart' }}
+                    {% else %}
+                      {{ 'products.product.sold_out' | t | default: 'Sold out' }}
+                    {% endif %}
+                  </button>
+                </div>
+
+                {% if block.settings.show_dynamic_checkout and product.available %}
+                  <div class="new-product-details__dynamic-checkout">
+                    {{ form | payment_button }}
+                  </div>
+                {% endif %}
+              {% endform %}
+            </div>
+
+          {% when 'description' %}
+            <div class="new-product-details__description-box" {{ block.shopify_attributes }}>
+              <div class="new-product-details__description rte">
+                {{ product.description | default: '<p>Naturally formulated treats packed with probiotics, prebiotics, and real chicken to support your dog’s digestion and gut health.</p>' }}
+              </div>
+            </div>
+
+          {% when 'text' %}
+            <div class="new-product-details__text-box" {{ block.shopify_attributes }}>
+              <div class="new-product-details__text rte">
+                {{ block.settings.text }}
+              </div>
+            </div>
+
+          {% when 'custom_liquid' %}
+            <div class="new-product-details__custom-liquid-box" {{ block.shopify_attributes }}>
+              {{ block.settings.custom_liquid }}
+            </div>
+        {% endcase %}
+      {% endfor %}
+    </div>
 
   </div>
-
 </div>
-
 
 <script src="{{ 'new-product-details-javascript.js' | asset_url }}" defer></script>
 
 {% schema %}
-  {
-    "name": "new-product-details",
-    "class": "new-product-details-parent",
-    "settings": [],
-    "presets": [
-      {
-        "name": "New Product Details"
-      }
-    ]
-  }
+{
+  "name": "New Product Details",
+  "class": "new-product-details-parent",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1000,
+      "max": 1600,
+      "step": 50,
+      "unit": "px",
+      "label": "Max Width",
+      "default": 1200
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Carousel Styling"
+    },
+    {
+      "type": "color",
+      "id": "arrow_bg_color",
+      "label": "Arrow Button Background Color",
+      "default": "#e60067"
+    },
+    {
+      "type": "color",
+      "id": "arrow_icon_color",
+      "label": "Arrow Icon Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "active_thumb_border_color",
+      "label": "Active Thumbnail Border Color",
+      "default": "#004d40"
+    },
+    {
+      "type": "range",
+      "id": "main_border_radius",
+      "min": 0,
+      "max": 36,
+      "step": 2,
+      "unit": "px",
+      "label": "Main Image Border Radius",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "thumb_border_radius",
+      "min": 0,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "label": "Thumbnail Border Radius",
+      "default": 12
+    },
+    {
+      "type": "select",
+      "id": "image_aspect_ratio",
+      "label": "Image Aspect Ratio",
+      "options": [
+        {
+          "value": "1 / 1",
+          "label": "Square (1:1)"
+        },
+        {
+          "value": "4 / 5",
+          "label": "Portrait (4:5)"
+        },
+        {
+          "value": "3 / 4",
+          "label": "Portrait (3:4)"
+        },
+        {
+          "value": "auto",
+          "label": "Natural / Auto"
+        }
+      ],
+      "default": "1 / 1"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_autoplay",
+      "label": "Enable Auto Play",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "autoplay_speed",
+      "min": 2,
+      "max": 10,
+      "step": 1,
+      "unit": "s",
+      "label": "Autoplay Speed (seconds)",
+      "default": 5
+    },
+    {
+      "type": "header",
+      "content": "Fallback Content"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Fallback Image"
+    },
+    {
+      "type": "text",
+      "id": "text",
+      "label": "Fallback Title",
+      "default": "Wellie Bellie Bites"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "title",
+      "name": "Product Title",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "select",
+          "id": "heading_size",
+          "label": "Heading Size",
+          "options": [
+            {
+              "value": "h1",
+              "label": "Large"
+            },
+            {
+              "value": "h2",
+              "label": "Medium"
+            },
+            {
+              "value": "h3",
+              "label": "Small"
+            }
+          ],
+          "default": "h1"
+        }
+      ]
+    },
+    {
+      "type": "price",
+      "name": "Product Price",
+      "limit": 1,
+      "settings": []
+    },
+    {
+      "type": "variant_picker",
+      "name": "Variant Picker",
+      "limit": 1,
+      "settings": []
+    },
+    {
+      "type": "buy_buttons",
+      "name": "Buy Buttons",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "show_quantity_selector",
+          "label": "Show quantity selector",
+          "default": true
+        },
+        {
+          "type": "checkbox",
+          "id": "show_dynamic_checkout",
+          "label": "Show dynamic checkout buttons",
+          "default": true
+        }
+      ]
+    },
+    {
+      "type": "description",
+      "name": "Description",
+      "limit": 1,
+      "settings": []
+    },
+    {
+      "type": "text",
+      "name": "Text",
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Text",
+          "default": "<p>Naturally crafted with high quality ingredients.</p>"
+        }
+      ]
+    },
+    {
+      "type": "custom_liquid",
+      "name": "Custom Liquid",
+      "settings": [
+        {
+          "type": "liquid",
+          "id": "custom_liquid",
+          "label": "Custom Liquid"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "New Product Details",
+      "blocks": [
+        {
+          "type": "title"
+        },
+        {
+          "type": "price"
+        },
+        {
+          "type": "variant_picker"
+        },
+        {
+          "type": "buy_buttons"
+        },
+        {
+          "type": "description"
+        }
+      ]
+    }
+  ]
+}
 {% endschema %}

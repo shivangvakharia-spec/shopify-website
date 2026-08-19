@@ -1,83 +1,259 @@
-<link rel="stylesheet" href="{{ 'navbar-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
+<link
+  rel="stylesheet"
+  href="{{ 'navbar-stylesheet.css' | asset_url }}"
+  media="print"
+  onload="this.media='all'">
+<noscript>
+  {{ 'navbar-stylesheet.css' | asset_url | stylesheet_tag }}
+</noscript>
 
-<div class="navbar"> 
+{%- style -%}
+  .navbar-section-{{ section.id }} {
+    --navbar-bg: {{ section.settings.bg_color | default: '#faf5f0' }};
+    --navbar-color: {{ section.settings.text_color | default: '#004d40' }};
+    --navbar-logo-width: {{ section.settings.logo_width | default: 130 }}px;
+  }
+{%- endstyle -%}
 
-	<div class="navbar-logo">
-		<a href="{{ routes.root_url }}">
-			{% assign navbar_logo = section.settings.logo | default: settings.logo %}
-			{% if navbar_logo != blank %}
-				{% assign navbar_logo_alt = navbar_logo.alt | default: shop.name | escape %}
-				{{
-					navbar_logo
-					| image_url: width: 200
-					| image_tag:
-						class: 'navbar-logo__image',
-						width: 100,
-						height: 50,
-						alt: navbar_logo_alt
-				}}
-			{% endif %}
-		</a>
-	</div>
+<nav 
+  class="navbar navbar-section-{{ section.id }}{% if section.settings.enable_sticky %} navbar--sticky{% endif %}" 
+  id="Navbar-{{ section.id }}"
+  role="navigation"
+  aria-label="Main Navigation"
+>
+  <div class="navbar__container">
+    
+    <!-- Mobile Hamburger Button -->
+    <button 
+      type="button" 
+      class="navbar__hamburger" 
+      aria-label="Open menu" 
+      aria-controls="NavbarMobileDrawer-{{ section.id }}"
+      aria-expanded="false"
+    >
+      <svg class="navbar__hamburger-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
 
-		{%  comment  %}  
-			Yet to be implemented:
-			routes.root_url
-			routes.account_url
-			routes.cart_url
-			/collections/all
-			/pages/about-us
-			/pages/contact-us
-		{% endcomment %}
+    <!-- Left: Logo -->
+    <div class="navbar__logo">
+      <a href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+        {% assign navbar_logo = section.settings.logo | default: settings.logo %}
+        {% if navbar_logo != blank %}
+          {% assign navbar_logo_alt = navbar_logo.alt | default: shop.name | escape %}
+          {{
+            navbar_logo
+            | image_url: width: 300
+            | image_tag:
+              class: 'navbar__logo-image',
+              alt: navbar_logo_alt
+          }}
+        {% else %}
+          {{
+            'default-logo.png'
+            | asset_url
+            | image_tag:
+              class: 'navbar__logo-image',
+              alt: shop.name,
+              width: 130,
+              height: 40
+          }}
+        {% endif %}
+      </a>
+    </div>
 
-	<div class="navbar-links">
-		<a href ="{{ routes.root_url }}" >Home</a>
+    <!-- Center: Navigation Menu Links -->
+    <div class="navbar__nav">
+      <ul class="navbar__menu" role="list">
+        {% assign menu = linklists[section.settings.menu] %}
+        {% if menu != blank and menu.links.size > 0 %}
+          {% for link in menu.links %}
+            <li class="navbar__menu-item{% if link.links != blank %} navbar__menu-item--has-dropdown{% endif %}">
+              <a href="{{ link.url }}" class="navbar__menu-link{% if link.active %} is-active{% endif %}">
+                {{ link.title }}
+                {% if link.links != blank %}
+                  <svg class="navbar__chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                {% endif %}
+              </a>
+              {% if link.links != blank %}
+                <ul class="navbar__dropdown" role="list">
+                  {% for childlink in link.links %}
+                    <li class="navbar__dropdown-item">
+                      <a href="{{ childlink.url }}" class="navbar__dropdown-link">
+                        {{ childlink.title }}
+                      </a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </li>
+          {% endfor %}
+        {% else %}
+          <!-- Default Mockup Navigation Links -->
+          <li class="navbar__menu-item">
+            <a href="{{ routes.root_url }}" class="navbar__menu-link">Home</a>
+          </li>
+          <li class="navbar__menu-item navbar__menu-item--has-dropdown">
+            <a href="{{ routes.all_products_collection_url }}" class="navbar__menu-link">
+              Shop
+              <svg class="navbar__chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </a>
+            <ul class="navbar__dropdown" role="list">
+              <li class="navbar__dropdown-item">
+                <a href="{{ routes.all_products_collection_url }}" class="navbar__dropdown-link">All Products</a>
+              </li>
+              <li class="navbar__dropdown-item">
+                <a href="{{ routes.all_products_collection_url }}" class="navbar__dropdown-link">Treats & Chews</a>
+              </li>
+              <li class="navbar__dropdown-item">
+                <a href="{{ routes.all_products_collection_url }}" class="navbar__dropdown-link">Gut Health</a>
+              </li>
+              <li class="navbar__dropdown-item">
+                <a href="{{ routes.all_products_collection_url }}" class="navbar__dropdown-link">Supplements</a>
+              </li>
+            </ul>
+          </li>
+          <li class="navbar__menu-item">
+            <a href="/pages/about-us" class="navbar__menu-link">About Us</a>
+          </li>
+          <li class="navbar__menu-item">
+            <a href="/pages/contact-us" class="navbar__menu-link">Contact us</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
 
-	</div>
+    <!-- Right: Action Icons (Search, Profile, Cart) -->
+    <div class="navbar__actions">
+      <!-- Search -->
+      <a href="{{ routes.search_url }}" class="navbar__action-btn navbar__action-btn--search" aria-label="Search">
+        <svg class="navbar__action-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </a>
 
-	<div class="navbar-links">
-		<a href ="/collections/all" >Shop</a>
+      <!-- Profile / Account -->
+      <a href="{{ routes.account_url }}" class="navbar__action-btn navbar__action-btn--account" aria-label="Account">
+        <svg class="navbar__action-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M5.5 21a8.5 8.5 0 0 1 13 0"></path>
+        </svg>
+      </a>
 
-	</div>
+      <!-- Cart -->
+      <a href="{{ routes.cart_url }}" class="navbar__action-btn navbar__action-btn--cart" id="NavbarCartBtn-{{ section.id }}" aria-label="Cart">
+        <svg class="navbar__action-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        {% if cart.item_count > 0 %}
+          <span class="navbar__cart-count" aria-hidden="true">{{ cart.item_count }}</span>
+        {% endif %}
+      </a>
+    </div>
 
-		<a href ="/pages/about-us" >About Us</a>
-		<a href ="/pages/contact-us" >Contact Us</a>
+  </div>
 
-	<div class="navbar-actions">
-		<a href="/search">
-			Search
-		</a>
-
-		<a href="{{ routes.account_url }}">
-			Profile
-		</a>
-
-		<a href="" class="navbar-cart">
-				Cart
-		</a>
-	
-	</div>
-
-</div>
-
+  <!-- Mobile Navigation Drawer -->
+  <div class="navbar__drawer" id="NavbarMobileDrawer-{{ section.id }}" aria-hidden="true">
+    <div class="navbar__drawer-backdrop"></div>
+    <div class="navbar__drawer-content">
+      <div class="navbar__drawer-header">
+        <span class="navbar__drawer-title">Menu</span>
+        <button type="button" class="navbar__drawer-close" aria-label="Close menu">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <ul class="navbar__drawer-menu" role="list">
+        <li><a href="{{ routes.root_url }}" class="navbar__drawer-link">Home</a></li>
+        <li><a href="{{ routes.all_products_collection_url }}" class="navbar__drawer-link">Shop</a></li>
+        <li><a href="/pages/about-us" class="navbar__drawer-link">About Us</a></li>
+        <li><a href="/pages/contact-us" class="navbar__drawer-link">Contact us</a></li>
+      </ul>
+      <div class="navbar__drawer-footer">
+        <a href="{{ routes.search_url }}" class="navbar__drawer-action-link">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Search
+        </a>
+        <a href="{{ routes.account_url }}" class="navbar__drawer-action-link">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="7" r="4"></circle>
+            <path d="M5.5 21a8.5 8.5 0 0 1 13 0"></path>
+          </svg>
+          Account
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
 
 <script src="{{ 'navbar-javascript.js' | asset_url }}" defer></script>
 
 {% schema %}
 {
-	"name": "navbar",
-	"class": "navbar-parent",
-	"settings": [
-		{
-			"type": "image_picker",
-			"id": "logo",
-			"label": "Logo"
-		}
-	],
-	"presets": [
-		{
-			"name": "Navbar"
-		}
-	]
+  "name": "Navbar",
+  "class": "navbar-parent",
+  "tag": "header",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo"
+    },
+    {
+      "type": "range",
+      "id": "logo_width",
+      "min": 80,
+      "max": 220,
+      "step": 5,
+      "unit": "px",
+      "label": "Logo width",
+      "default": 130
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#faf5f0"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text & Icon Color",
+      "default": "#004d40"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_sticky",
+      "label": "Enable Sticky Header",
+      "default": false
+    }
+  ],
+  "presets": [
+    {
+      "name": "Navbar"
+    }
+  ]
 }
 {% endschema %}
