@@ -1,61 +1,72 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
-    "name": "t:sections.header.name",
-    "type": "header",
-    "sections": {
-        "announcement-bar": {
-            "type": "announcement-bar",
-            "disabled": true,
-            "blocks": {
-                "announcement-bar-0": {
-                    "type": "announcement",
-                    "settings": {
-                        "text": "Welcome to our store",
-                        "text_alignment": "center",
-                        "color_scheme": "background-1",
-                        "link": ""
-                    }
-                }
-            },
-            "block_order": [
-                "announcement-bar-0"
-            ],
-            "settings": {}
-        },
-        "header": {
-            "type": "header",
-            "custom_css": [
-                ".header__heading-link .h2 {font-size: 16px;}"
-            ],
-            "settings": {
-                "logo_position": "middle-center",
-                "menu": "main-menu",
-                "menu_type_desktop": "dropdown",
-                "sticky_header_type": "always",
-                "show_line_separator": true,
-                "color_scheme": "inverse",
-                "enable_country_selector": false,
-                "enable_language_selector": false,
-                "mobile_logo_position": "center",
-                "margin_bottom": 0,
-                "padding_top": 8,
-                "padding_bottom": 8
-            }
-        },
-        "banner": {
-            "type": "banner",
-            "name": "banner",
-            "settings": {}
-        },
-        "navbar": {
-            "type": "navbar",
-            "name": "navbar",
-            "settings": {}
-        }
+  "name": "t:sections.header.name",
+  "type": "header",
+  "sections": {
+    "banner": {
+      "type": "banner",
+      "name": "banner",
+      "settings": {}
     },
-    "order": [
-        "banner",
-        "navbar",
-        "announcement-bar",
-        "header"
-    ]
+    "navbar": {
+      "type": "navbar",
+      "name": "navbar",
+      "settings": {
+        "logo": "shopify://shop_images/1afbc372-c61e-4b73-a078-859d830094e3.png"
+      }
+    },
+    "announcement-bar": {
+      "type": "announcement-bar",
+      "blocks": {
+        "announcement-bar-0": {
+          "type": "announcement",
+          "settings": {
+            "text": "Welcome to our store",
+            "text_alignment": "center",
+            "color_scheme": "background-1",
+            "link": ""
+          }
+        }
+      },
+      "block_order": [
+        "announcement-bar-0"
+      ],
+      "disabled": true,
+      "settings": {}
+    },
+    "header": {
+      "type": "header",
+      "custom_css": [
+        ".header__heading-link .h2 {font-size: 16px;}"
+      ],
+      "settings": {
+        "logo_position": "middle-center",
+        "menu": "main-menu",
+        "menu_type_desktop": "dropdown",
+        "sticky_header_type": "always",
+        "show_line_separator": true,
+        "color_scheme": "inverse",
+        "enable_country_selector": false,
+        "enable_language_selector": false,
+        "mobile_logo_position": "center",
+        "margin_bottom": 0,
+        "padding_top": 8,
+        "padding_bottom": 8
+      }
+    }
+  },
+  "order": [
+    "banner",
+    "navbar",
+    "announcement-bar",
+    "header"
+  ]
 }
