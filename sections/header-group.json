@@ -14,13 +14,24 @@
     "banner": {
       "type": "banner",
       "name": "banner",
-      "settings": {}
+      "settings": {
+        "text": "15% Off over ₹5000 Use Code WELLIEWOW",
+        "link": "",
+        "bg_color": "#004d40",
+        "text_color": "#ffffff",
+        "font_size": 13
+      }
     },
     "navbar": {
       "type": "navbar",
       "name": "navbar",
       "settings": {
-        "logo": "shopify://shop_images/1afbc372-c61e-4b73-a078-859d830094e3.png"
+        "logo": "shopify://shop_images/1afbc372-c61e-4b73-a078-859d830094e3.png",
+        "logo_width": 130,
+        "menu": "main-menu",
+        "bg_color": "#faf5f0",
+        "text_color": "#004d40",
+        "enable_sticky": false
       }
     },
     "announcement-bar": {
@@ -44,6 +55,7 @@
     },
     "header": {
       "type": "header",
+      "disabled": true,
       "custom_css": [
         ".header__heading-link .h2 {font-size: 16px;}"
       ],
