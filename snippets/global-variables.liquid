@@ -1,0 +1,40 @@
+{% doc %}
+  Global Variables
+
+  Exposes shop data and translatable strings as JSON for JavaScript consumption.
+  Placed at end of body in layout/theme.liquid.
+{% enddoc %}
+
+<script type="application/json" id="shop-money-format">
+  {
+    "money_format": {{ shop.money_format | strip_html | json }},
+    "money_with_currency_format": {{ shop.money_with_currency_format | strip_html | json }}
+  }
+</script>
+
+<script type="application/json" id="theme-strings">
+  {
+    "addToCart": {{ 'products.add_to_cart' | t | json }},
+    "soldOut": {{ 'products.sold_out' | t | json }},
+    "addedToCart": {{ 'cart.added_to_cart' | t | json }},
+    "updateCartError": {{ 'cart.update_cart_error' | t | json }},
+    "itemRemoved": {{ 'cart.item_removed' | t | json }},
+    "dismiss": {{ 'general.dismiss' | t | json }},
+    "cartEmpty": {{ 'cart.empty_cart' | t | json }},
+    "subtotal": {{ 'cart.subtotal' | t | json }},
+    "checkout": {{ 'cart.checkout' | t | json }},
+    "continueShopping": {{ 'cart.continue_shopping' | t | json }},
+    "cartNote": {{ 'cart.note' | t | json }},
+    "taxesAndShipping": {{ 'cart.taxes_and_shipping_at_checkout' | t | json }},
+    "remove": {{ 'cart.remove' | t | json }},
+    "cartError": {{ 'cart.cart_error' | t | json }},
+    "cartLoading": {{ 'cart.loading' | t | json }},
+    "shopNow": {{ 'cart.shop_now' | t | json }},
+    "unavailable": {{ 'products.unavailable' | t | json }}
+  }
+</script>
+
+<script>
+  window.theme = window.theme || {};
+  window.theme.strings = JSON.parse(document.getElementById('theme-strings').textContent);
+</script>

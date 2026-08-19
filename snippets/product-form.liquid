@@ -1,0 +1,104 @@
+{% doc %}
+  Product Form
+
+  Renders the add-to-cart form with quantity selector, selling plan selector, and submit button.
+  AJAX add-to-cart via product-form.js Web Component. Falls back to standard form POST without JS.
+
+  @param {object} product - Product object (required)
+
+  @example
+  {% render 'product-form', product: product %}
+{% enddoc %}
+
+{%- liquid
+  assign product = product | default: blank
+
+  unless product != blank
+    break
+  endunless
+
+  assign selected_variant = product.selected_or_first_available_variant
+  assign current_variant_id = selected_variant.id
+-%}
+
+<product-form
+  class="product-form block"
+  data-product-id="{{ product.id }}"
+  data-product-title="{{ product.title | escape }}"
+  data-product-url="{{ product.url }}"
+  data-product-featured-image="{% if product.featured_image %}{{ product.featured_image | image_url: width: 500 }}{% endif %}"
+  data-product-price="{{ selected_variant.price | money | strip_html | escape }}"
+>
+  <form
+    id="product-form-{{ product.id }}"
+    action="{{ routes.cart_add_url }}"
+    method="post"
+    data-product-form
+  >
+    <input type="hidden" name="id" value="{{ current_variant_id }}">
+    <input type="hidden" name="selling_plan" value="" data-selling-plan-input>
+
+    {%- comment -%} Selling plan selector {%- endcomment -%}
+    {%- if product.selling_plan_groups.size > 0 -%}
+      <div class="mb-4">
+        {% render 'selling-plan-selector', product: product %}
+      </div>
+    {%- endif -%}
+
+    {%- comment -%} Quantity selector {%- endcomment -%}
+    <div class="mb-4">
+      <label class="mb-2 block text-sm font-medium" for="quantity-{{ product.id }}">
+        {{ 'products.quantity' | t }}
+      </label>
+      <div class="inline-flex items-center rounded border border-border">
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center text-muted transition-colors hover:text-foreground disabled:opacity-30"
+          data-quantity-minus
+          aria-label="{{ 'cart.decrease' | t: product: product.title }}"
+        >
+          {% render 'icon-minus', size: 16 %}
+        </button>
+        <input
+          type="number"
+          id="quantity-{{ product.id }}"
+          name="quantity"
+          value="1"
+          min="1"
+          max="99"
+          class="h-10 w-12 border-x border-border bg-transparent text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          aria-label="{{ 'cart.quantity_input_label' | t: product: product.title }}"
+        >
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center text-muted transition-colors hover:text-foreground"
+          data-quantity-plus
+          aria-label="{{ 'cart.increase' | t: product: product.title }}"
+        >
+          {% render 'icon-plus', size: 16 %}
+        </button>
+      </div>
+    </div>
+
+    {%- comment -%} Add to cart button {%- endcomment -%}
+    <button
+      type="submit"
+      class="product-form__submit relative flex w-full items-center justify-center gap-2 rounded bg-foreground px-6 py-3.5 text-sm font-medium text-background transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+      {%- unless selected_variant.available %}
+        disabled
+      {% endunless -%}
+    >
+      <span data-button-text>
+        {%- if selected_variant.available == false -%}
+          {{ 'products.sold_out' | t }}
+        {%- else -%}
+          {{ 'products.add_to_cart' | t }}
+        {%- endif -%}
+      </span>
+      <div class="absolute inset-0 hidden items-center justify-center" data-button-loader>
+        <div class="loader text-background"></div>
+      </div>
+    </button>
+    <div data-form-error class="mt-2 text-sm text-error" hidden></div>
+  </form>
+</product-form>

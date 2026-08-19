@@ -1,23 +1,22 @@
-let subscribers = {}
-
-function subscribe(eventName, callback) {
-  if (subscribers[eventName] === undefined) {
-    subscribers[eventName] = []
-  }
-
-  subscribers[eventName] = [...subscribers[eventName], callback];
-
-  return function unsubscribe() {
-    subscribers[eventName] = subscribers[eventName].filter((cb) => {
-      return cb !== callback
-    });
-  }
+const PUB_SUB_EVENTS = {
+  cartAdd: 'cart:add',
+  cartUpdate: 'cart:update',
+  cartError: 'cart:error',
+  variantChange: 'variant:change',
 };
 
-function publish(eventName, data) {
-  if (subscribers[eventName]) {
-    subscribers[eventName].forEach((callback) => {
-      callback(data)
-    })
-  }
-}
+const subscribers = {};
+
+const subscribe = (event, callback) => {
+  subscribers[event] = subscribers[event] || [];
+  subscribers[event].push(callback);
+
+  return () => {
+    subscribers[event] = subscribers[event].filter((cb) => cb !== callback);
+  };
+};
+
+const publish = (event, data) => {
+  if (!subscribers[event]?.length) return;
+  subscribers[event].forEach((callback) => callback(data));
+};

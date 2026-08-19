@@ -1,0 +1,103 @@
+{% doc %}
+  Product Card
+
+  Renders a product card with image, title, price, variant selector, and add-to-cart button.
+  Entire card is clickable via stretched-link pattern on the title.
+
+  @param {product} card_product - Product object (required)
+  @param {boolean} [show_vendor] - Display vendor name (default: false)
+  @param {boolean} [lazy_load] - Enable lazy loading (default: true)
+  @param {string} [card_class] - Additional CSS classes (optional)
+
+  @example
+  {% render 'product-card', card_product: product %}
+{% enddoc %}
+
+{%- liquid
+  assign card_product = card_product | default: blank
+
+  unless card_product != blank
+    break
+  endunless
+
+  assign show_vendor = show_vendor | default: false
+  assign lazy_load = lazy_load | default: true
+  assign card_class = card_class | default: ''
+
+  assign selected_variant = card_product.selected_or_first_available_variant
+  assign card_image = selected_variant.featured_image | default: card_product.featured_image
+-%}
+
+<div
+  class="product-card group/card relative flex h-full w-full flex-col overflow-hidden rounded-sm border border-border transition-all duration-300 hover:shadow-md {{ card_class }}"
+  data-product-card
+  data-product-id="{{ card_product.id }}"
+>
+  <div
+    class="product-card__image relative aspect-[4/5] overflow-hidden bg-muted/5"
+    data-product-card-link
+  >
+    {%- render 'product-badge', product: card_product -%}
+
+    {%- if card_image -%}
+      <img
+        src="{{ card_image | image_url: width: 500 }}"
+        alt="{{ card_product.title | escape }}"
+        width="500"
+        height="625"
+        loading="{% if lazy_load %}lazy{% else %}eager{% endif %}"
+        class="h-full w-full object-cover"
+        data-product-card-image
+      >
+    {%- else -%}
+      <div class="flex h-full w-full items-center justify-center text-muted">
+        {%- render 'icon-cart', size: 48 -%}
+      </div>
+    {%- endif -%}
+  </div>
+
+  <div class="flex flex-1 flex-col justify-between gap-2 p-3 md:p-4">
+    {%- if show_vendor and card_product.vendor != blank -%}
+      <p class="text-xs text-muted">{{ card_product.vendor }}</p>
+    {%- endif -%}
+
+    <a
+      href="{{ card_product.url | within: collection }}"
+      class="product-card__title text-sm font-medium after:absolute after:inset-0 md:text-base"
+      data-product-card-title-link
+    >
+      {{ card_product.title }}
+    </a>
+
+    <div class="product-card__price flex items-center gap-2">
+      <span class="text-sm font-medium" data-product-card-price>
+        {{ card_product.price | money }}
+      </span>
+      <s
+        class="text-xs text-muted{% unless card_product.compare_at_price > card_product.price %} hidden{% endunless %}"
+        data-product-card-compare-price
+      >
+        {%- if card_product.compare_at_price > card_product.price -%}
+          {{ card_product.compare_at_price | money }}
+        {%- endif -%}
+      </s>
+    </div>
+
+    {%- comment -%} Variant selector + Add to cart {%- endcomment -%}
+    <div class="relative z-10 space-y-2">
+      {%- unless card_product.has_only_default_variant -%}
+        {% render 'variant-selector',
+          product: card_product,
+          options: 'color',
+          swatch_size: 'sm',
+          show_labels: false,
+          option_limit: 5,
+          show_overflow_count: true,
+          color_display: 'image'
+        %}
+      {%- endunless -%}
+
+      {% render 'add-to-cart-button', product: card_product %}
+    </div>
+  </div>
+</div>

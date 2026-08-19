@@ -1,212 +1,227 @@
-class CartRemoveButton extends HTMLElement {
-  constructor() {
-    super();
+document.addEventListener('DOMContentLoaded', () => {
+  const cartPage = document.querySelector('[data-cart-page]');
+  if (!cartPage) return;
 
-    this.addEventListener('click', (event) => {
-      event.preventDefault();
-      const cartItems = this.closest('cart-items') || this.closest('cart-drawer-items');
-      cartItems.updateQuantity(this.dataset.index, 0);
-    });
-  }
-}
+  const checkoutLink = document.querySelector('[data-cart-checkout]');
+  let _checkoutPending = false;
+  const _checkoutUrl = checkoutLink?.href ?? '';
+  const _pendingQty = new Map();
+  let _flushTimer = null;
+  let _mutationChain = Promise.resolve();
+  let _queuedMutations = 0;
+  let _executingMutations = 0;
+  let _noteTimer = null;
 
-customElements.define('cart-remove-button', CartRemoveButton);
+  const _showLineError = (key, message = null) => {
+    const row = cartPage.querySelector(`[data-item-key="${key}"]`);
+    const errEl = row?.querySelector('[data-cart-line-error]');
+    if (!errEl) return;
+    errEl.textContent = message ?? errEl.dataset.errorMessage;
+    errEl.hidden = false;
+    setTimeout(() => { errEl.hidden = true; }, 3000);
+  };
 
-class CartItems extends HTMLElement {
-  constructor() {
-    super();
-    this.lineItemStatusElement = document.getElementById('shopping-cart-line-item-status') || document.getElementById('CartDrawer-LineItemStatus');
+  const _handleQtyChange = (key, newQty) => {
+    if (!CartStore.state) return;
 
-    const debouncedOnChange = debounce((event) => {
-      this.onChange(event);
-    }, ON_CHANGE_DEBOUNCE_TIMER);
-
-    this.addEventListener('change', debouncedOnChange.bind(this));
-  }
-
-  cartUpdateUnsubscriber = undefined;
-
-  connectedCallback() {
-    this.cartUpdateUnsubscriber = subscribe(PUB_SUB_EVENTS.cartUpdate, (event) => {
-      if (event.source === 'cart-items') {
-        return;
-      }
-      this.onCartUpdate();
-    });
-  }
-
-  disconnectedCallback() {
-    if (this.cartUpdateUnsubscriber) {
-      this.cartUpdateUnsubscriber();
+    if (_pendingQty.has(key)) {
+      _pendingQty.get(key).finalQty = newQty;
+      CartStore.patchQty(key, newQty);
+    } else {
+      const stateRollback = CartStore.optimistic(key, newQty);
+      _pendingQty.set(key, { stateRollback, finalQty: newQty });
     }
-  }
 
-  onChange(event) {
-    this.updateQuantity(event.target.dataset.index, event.target.value, document.activeElement.getAttribute('name'));
-  }
+    const row = cartPage.querySelector(`[data-item-key="${key}"]`);
+    if (!row) return;
 
-  onCartUpdate() {
-    fetch(`${routes.cart_url}?section_id=main-cart-items`)
-      .then((response) => response.text())
-      .then((responseText) => {
-        const html = new DOMParser().parseFromString(responseText, 'text/html');
-        const sourceQty = html.querySelector('cart-items');
-        this.innerHTML = sourceQty.innerHTML;
-      })
-      .catch(e => {
-        console.error(e);
-      });
-  }
+    const input = row.querySelector('[data-cart-line-qty]');
+    if (input) input.value = newQty;
 
-  getSectionsToRender() {
-    return [
-      {
-        id: 'main-cart-items',
-        section: document.getElementById('main-cart-items').dataset.id,
-        selector: '.js-contents'
-      },
-      {
-        id: 'cart-icon-bubble',
-        section: 'cart-icon-bubble',
-        selector: '.shopify-section'
-      },
-      {
-        id: 'cart-live-region-text',
-        section: 'cart-live-region-text',
-        selector: '.shopify-section'
-      },
-      {
-        id: 'main-cart-footer',
-        section: document.getElementById('main-cart-footer').dataset.id,
-        selector: '.js-contents'
-      }
-    ];
-  }
+    const item = CartStore.state?.items?.find((i) => i.key === key);
+    if (item) {
+      const priceEl = row.querySelector('[data-cart-line-price]');
+      if (priceEl) priceEl.textContent = CartStore.formatMoney(newQty * item.final_price);
 
-  updateQuantity(line, quantity, name) {
-    this.enableLoading(line);
+      const compareEl = row.querySelector('[data-cart-line-compare-price]');
+      if (compareEl) compareEl.textContent = CartStore.formatMoney(item.original_price * newQty);
+    }
 
-    const body = JSON.stringify({
-      line,
-      quantity,
-      sections: this.getSectionsToRender().map((section) => section.section),
-      sections_url: window.location.pathname
+    const minusBtnEl = row.querySelector('[data-quantity-minus]');
+    if (minusBtnEl) {
+      const deleteIcon = minusBtnEl.querySelector('[data-icon-delete]');
+      const minusIcon = minusBtnEl.querySelector('[data-icon-minus]');
+      if (deleteIcon) deleteIcon.hidden = newQty !== 1;
+      if (minusIcon) minusIcon.hidden = newQty === 1;
+    }
+
+    clearTimeout(_flushTimer);
+    _flushTimer = setTimeout(_flush, 250);
+  };
+
+  const _flush = () => {
+    _flushTimer = null;
+    if (_pendingQty.size === 0) return;
+
+    const snapshot = new Map(_pendingQty);
+    _pendingQty.clear();
+
+    _queuedMutations++;
+    _mutationChain = _mutationChain.then(() => {
+      _queuedMutations--;
+      return _executeMutation(snapshot);
     });
+  };
 
-    fetch(`${routes.cart_change_url}`, { ...fetchConfig(), ...{ body } })
-      .then((response) => {
-        return response.text();
-      })
-      .then((state) => {
-        const parsedState = JSON.parse(state);
-        const quantityElement = document.getElementById(`Quantity-${line}`) || document.getElementById(`Drawer-quantity-${line}`);
-        const items = document.querySelectorAll('.cart-item');
+  const _executeMutation = async (snapshot) => {
+    const updates = (CartStore.state?.items ?? []).map((item) =>
+      snapshot.has(item.key) ? snapshot.get(item.key).finalQty : item.quantity
+    );
 
-        if (parsedState.errors) {
-          quantityElement.value = quantityElement.getAttribute('value');
-          this.updateLiveRegions(line, parsedState.errors);
-          return;
-        }
-
-        this.classList.toggle('is-empty', parsedState.item_count === 0);
-        const cartDrawerWrapper = document.querySelector('cart-drawer');
-        const cartFooter = document.getElementById('main-cart-footer');
-
-        if (cartFooter) cartFooter.classList.toggle('is-empty', parsedState.item_count === 0);
-        if (cartDrawerWrapper) cartDrawerWrapper.classList.toggle('is-empty', parsedState.item_count === 0);
-
-        this.getSectionsToRender().forEach((section => {
-          const elementToReplace =
-            document.getElementById(section.id).querySelector(section.selector) || document.getElementById(section.id);
-          elementToReplace.innerHTML =
-            this.getSectionInnerHTML(parsedState.sections[section.section], section.selector);
-        }));
-        const updatedValue = parsedState.items[line - 1] ? parsedState.items[line - 1].quantity : undefined;
-        let message = '';
-        if (items.length === parsedState.items.length && updatedValue !== parseInt(quantityElement.value)) {
-          if (typeof updatedValue === 'undefined') {
-            message = window.cartStrings.error;
-          } else {
-            message = window.cartStrings.quantityError.replace('[quantity]', updatedValue);
+    _executingMutations++;
+    try {
+      const data = await CartAPI.update({ updates });
+      CartStore.confirmBatch(data, snapshot.size);
+    } catch (error) {
+      const apiMessage = error?.description || error?.message || null;
+      for (const [key, { stateRollback }] of snapshot) {
+        CartStore.rollback(stateRollback);
+        const item = CartStore.state?.items?.find((i) => i.key === key);
+        if (item) {
+          const row = cartPage.querySelector(`[data-item-key="${key}"]`);
+          if (row) {
+            const input = row.querySelector('[data-cart-line-qty]');
+            if (input) input.value = item.quantity;
+            const priceEl = row.querySelector('[data-cart-line-price]');
+            if (priceEl) priceEl.textContent = CartStore.formatMoney(item.quantity * item.final_price);
+            const compareEl = row.querySelector('[data-cart-line-compare-price]');
+            if (compareEl) compareEl.textContent = CartStore.formatMoney(item.original_price * item.quantity);
+            const minusBtnEl = row.querySelector('[data-quantity-minus]');
+            if (minusBtnEl) {
+              const deleteIcon = minusBtnEl.querySelector('[data-icon-delete]');
+              const minusIcon = minusBtnEl.querySelector('[data-icon-minus]');
+              if (deleteIcon) deleteIcon.hidden = item.quantity !== 1;
+              if (minusIcon) minusIcon.hidden = item.quantity === 1;
+            }
           }
         }
-        this.updateLiveRegions(line, message);
-
-        const lineItem = document.getElementById(`CartItem-${line}`) || document.getElementById(`CartDrawer-Item-${line}`);
-        if (lineItem && lineItem.querySelector(`[name="${name}"]`)) {
-          cartDrawerWrapper ? trapFocus(cartDrawerWrapper, lineItem.querySelector(`[name="${name}"]`)) : lineItem.querySelector(`[name="${name}"]`).focus();
-        } else if (parsedState.item_count === 0 && cartDrawerWrapper) {
-          trapFocus(cartDrawerWrapper.querySelector('.drawer__inner-empty'), cartDrawerWrapper.querySelector('a'))
-        } else if (document.querySelector('.cart-item') && cartDrawerWrapper) {
-          trapFocus(cartDrawerWrapper, document.querySelector('.cart-item__name'))
-        }
-        publish(PUB_SUB_EVENTS.cartUpdate, {source: 'cart-items'});
-      }).catch(() => {
-        this.querySelectorAll('.loading-overlay').forEach((overlay) => overlay.classList.add('hidden'));
-        const errors = document.getElementById('cart-errors') || document.getElementById('CartDrawer-CartErrors');
-        errors.textContent = window.cartStrings.error;
-      })
-      .finally(() => {
-        this.disableLoading(line);
-      });
-  }
-
-  updateLiveRegions(line, message) {
-    const lineItemError = document.getElementById(`Line-item-error-${line}`) || document.getElementById(`CartDrawer-LineItemError-${line}`);
-    if (lineItemError) lineItemError.querySelector('.cart-item__error-text').innerHTML = message;
-
-    this.lineItemStatusElement.setAttribute('aria-hidden', true);
-
-    const cartStatus = document.getElementById('cart-live-region-text') || document.getElementById('CartDrawer-LiveRegionText');
-    cartStatus.setAttribute('aria-hidden', false);
-
-    setTimeout(() => {
-      cartStatus.setAttribute('aria-hidden', true);
-    }, 1000);
-  }
-
-  getSectionInnerHTML(html, selector) {
-    return new DOMParser()
-      .parseFromString(html, 'text/html')
-      .querySelector(selector).innerHTML;
-  }
-
-  enableLoading(line) {
-    const mainCartItems = document.getElementById('main-cart-items') || document.getElementById('CartDrawer-CartItems');
-    mainCartItems.classList.add('cart__items--disabled');
-
-    const cartItemElements = this.querySelectorAll(`#CartItem-${line} .loading-overlay`);
-    const cartDrawerItemElements = this.querySelectorAll(`#CartDrawer-Item-${line} .loading-overlay`);
-
-    [...cartItemElements, ...cartDrawerItemElements].forEach((overlay) => overlay.classList.remove('hidden'));
-
-    document.activeElement.blur();
-    this.lineItemStatusElement.setAttribute('aria-hidden', false);
-  }
-
-  disableLoading(line) {
-    const mainCartItems = document.getElementById('main-cart-items') || document.getElementById('CartDrawer-CartItems');
-    mainCartItems.classList.remove('cart__items--disabled');
-
-    const cartItemElements = this.querySelectorAll(`#CartItem-${line} .loading-overlay`);
-    const cartDrawerItemElements = this.querySelectorAll(`#CartDrawer-Item-${line} .loading-overlay`);
-
-    cartItemElements.forEach((overlay) => overlay.classList.add('hidden'));
-    cartDrawerItemElements.forEach((overlay) => overlay.classList.add('hidden'));
-  }
-}
-
-customElements.define('cart-items', CartItems);
-
-if (!customElements.get('cart-note')) {
-  customElements.define('cart-note', class CartNote extends HTMLElement {
-      constructor() {
-        super();
-
-      this.addEventListener('change', debounce((event) => {
-            const body = JSON.stringify({ note: event.target.value });
-            fetch(`${routes.cart_update_url}`, { ...fetchConfig(), ...{ body } });
-      }, ON_CHANGE_DEBOUNCE_TIMER))
+        _showLineError(key, apiMessage);
       }
+    } finally {
+      _executingMutations--;
+    }
+  };
+
+  const _handleRemove = (key) => {
+    if (!CartStore.state) return;
+    const row = cartPage.querySelector(`[data-item-key="${key}"]`);
+    if (!row) return;
+
+    clearTimeout(_flushTimer);
+    _flushTimer = null;
+    for (const [, pendingData] of _pendingQty) {
+      CartStore.rollback(pendingData.stateRollback);
+    }
+    _pendingQty.clear();
+
+
+    const parent = row.parentElement;
+    const rowWrapper = parent?.children.length === 1 ? parent : row;
+    const rowWrapperParent = rowWrapper.parentElement;
+    const rowWrapperNextSibling = rowWrapper.nextSibling;
+    rowWrapper.remove();
+
+    const stateRollback = CartStore.optimistic(key, 0);
+
+    _queuedMutations++;
+    _mutationChain = _mutationChain.then(async () => {
+      _queuedMutations--;
+      _executingMutations++;
+      try {
+        const currentLine = (CartStore.state?.items?.findIndex((item) => item.key === key) ?? -1) + 1;
+        if (currentLine <= 0) {
+          CartStore.settlePendingOp();
+          return;
+        }
+        const data = await CartAPI.change(currentLine, 0);
+        CartStore.confirm(data);
+      } catch (error) {
+        console.error('[Cart] remove failed:', error);
+        if (rowWrapperParent) rowWrapperParent.insertBefore(rowWrapper, rowWrapperNextSibling);
+        CartStore.rollback(stateRollback);
+        _showLineError(key, error?.description || error?.message || null);
+      } finally {
+        _executingMutations--;
+      }
+    });
+  };
+
+  const _handleQtyRemove = (event) => {
+    const minusBtn = event.target.closest('[data-quantity-minus]');
+    const plusBtn = event.target.closest('[data-quantity-plus]');
+    if (!minusBtn && !plusBtn) return;
+
+    const btn = minusBtn ?? plusBtn;
+    const row = btn.closest('[data-item-key]');
+    if (!row) return;
+    const key = row.dataset.itemKey;
+
+    const input = row.querySelector('[data-cart-line-qty]');
+    if (!input) return;
+
+    const currentQty = parseInt(input.value, 10);
+
+    if (minusBtn && currentQty === 1) {
+      _handleRemove(key);
+      return;
+    }
+
+    const delta = plusBtn ? 1 : -1;
+    const newQty = currentQty + delta;
+    if (newQty < 1 || newQty > 99) return;
+
+    _handleQtyChange(key, newQty);
+  };
+
+  const _handleNoteChange = (textarea) => {
+    clearTimeout(_noteTimer);
+    _noteTimer = setTimeout(async () => {
+      try { await CartAPI.update({ note: textarea.value }); } catch (error) { console.error('[Cart] note update failed:', error); }
+    }, 500);
+  };
+
+  const _onStoreChange = (state, pendingOps) => {
+    if (!state) return;
+
+    const isEmpty = state.item_count === 0;
+    if (pendingOps === 0 || (isEmpty && CartStore._pendingAdds === 0)) {
+      const cartItemsEl = cartPage.querySelector('[data-cart-items]');
+      const cartEmptyEl = cartPage.querySelector('[data-cart-empty]');
+      if (cartItemsEl) cartItemsEl.hidden = isEmpty;
+      if (cartEmptyEl) cartEmptyEl.hidden = !isEmpty;
+    }
+
+    if (pendingOps === 0 && _checkoutPending) {
+      _checkoutPending = false;
+      window.location.href = _checkoutUrl;
+    }
+  };
+
+  checkoutLink?.addEventListener('click', (event) => {
+    if (CartStore.pendingOps > 0) {
+      event.preventDefault();
+      _checkoutPending = true;
+    }
   });
-};
+
+  cartPage.addEventListener('click', _handleQtyRemove);
+
+  cartPage.addEventListener('input', (event) => {
+    if (event.target.closest('[data-cart-note]')) {
+      _handleNoteChange(event.target);
+    }
+  });
+
+  CartStore.subscribe(_onStoreChange);
+  CartStore.init();
+});
