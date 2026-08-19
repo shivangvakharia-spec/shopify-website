@@ -1,24 +1,30 @@
 <link rel="stylesheet" href="{{ 'img-txt-bg-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
 
 <div class="img-txt-bg"
-  style="background-color: {{ section.settings.background_color }};">
+	style="background-color: {{ section.settings.background_color }};">
+	
+	{% if product.featured_image %}
+	
+	<div>
+		{% if section.settings.image != blank %}
 
-  {% if product.featured_image %}
-    <div class="img-txt-bg__image">
-      {% if section.settings.image != blank %}
-        {{
-          section.settings.image
-          | image_url: width: 800
-          | image_tag
-        }}
-      {% endif %}
-    </div>
-  {% endif %}
+			{{
+				section.settings.image
+				| image_url: width: 800
+				| image_tag
+			}}
 
-  <div class="img-txt-bg__text" style="color: {{ section.settings.text_color }};">
-    {{ section.settings.text }}
-  </div>
+		{% endif %}
+
+	</div>
+	{% endif %}
+			
+	<div class="img-txt-bg__text">
+		{{ section.settings.text }}
+		style="color: {{ section.settings.text_color }};"
+	</div>
 </div>
+
 
 <script src="{{ 'img-txt-bg-javascript.js' | asset_url }}" defer></script>
 

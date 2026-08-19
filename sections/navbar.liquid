@@ -1,0 +1,83 @@
+<link rel="stylesheet" href="{{ 'navbar-stylesheet.css' | asset_url }}" media="print" onload="this.media='all'">
+
+<div class="navbar"> 
+
+	<div class="navbar-logo">
+		<a href="{{ routes.root_url }}">
+			{% assign navbar_logo = section.settings.logo | default: settings.logo %}
+			{% if navbar_logo != blank %}
+				{% assign navbar_logo_alt = navbar_logo.alt | default: shop.name | escape %}
+				{{
+					navbar_logo
+					| image_url: width: 200
+					| image_tag:
+						class: 'navbar-logo__image',
+						width: 100,
+						height: 50,
+						alt: navbar_logo_alt
+				}}
+			{% endif %}
+		</a>
+	</div>
+
+		{%  comment  %}  
+			Yet to be implemented:
+			routes.root_url
+			routes.account_url
+			routes.cart_url
+			/collections/all
+			/pages/about-us
+			/pages/contact-us
+		{% endcomment %}
+
+	<div class="navbar-links">
+		<a href ="{{ routes.root_url }}" >Home</a>
+
+	</div>
+
+	<div class="navbar-links">
+		<a href ="/collections/all" >Shop</a>
+
+	</div>
+
+		<a href ="/pages/about-us" >About Us</a>
+		<a href ="/pages/contact-us" >Contact Us</a>
+
+	<div class="navbar-actions">
+		<a href="/search">
+			Search
+		</a>
+
+		<a href="{{ routes.account_url }}">
+			Profile
+		</a>
+
+		<a href="" class="navbar-cart">
+				Cart
+		</a>
+	
+	</div>
+
+</div>
+
+
+<script src="{{ 'navbar-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+	"name": "navbar",
+	"class": "navbar-parent",
+	"settings": [
+		{
+			"type": "image_picker",
+			"id": "logo",
+			"label": "Logo"
+		}
+	],
+	"presets": [
+		{
+			"name": "Navbar"
+		}
+	]
+}
+{% endschema %}

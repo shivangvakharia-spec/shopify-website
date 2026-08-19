@@ -1,0 +1,44 @@
+<link
+  rel="stylesheet"
+  href="{{ 'new-product-details-stylesheet.css' | asset_url }}"
+  media="print"
+  onload="this.media='all'">
+
+<div class="new-product-details">
+
+  {% if product.featured_image %}
+
+    <div class="product-image">
+      {% if section.settings.image != blank %}
+
+        {{
+          section.settings.image | image_url: width: 800 | image_tag
+        }}
+
+      {% endif %}
+
+    </div>
+  {% endif %}
+
+  <div class="product-details">
+    {{ section.settings.text }}
+
+  </div>
+
+</div>
+
+
+<script src="{{ 'new-product-details-javascript.js' | asset_url }}" defer></script>
+
+{% schema %}
+  {
+    "name": "new-product-details",
+    "class": "new-product-details-parent",
+    "settings": [],
+    "presets": [
+      {
+        "name": "New Product Details"
+      }
+    ]
+  }
+{% endschema %}
